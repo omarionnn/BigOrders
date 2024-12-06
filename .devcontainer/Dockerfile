@@ -1,8 +1,9 @@
 FROM mcr.microsoft.com/devcontainers/javascript-node:18
 
 # Install MongoDB client tools
-RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-    && apt-get -y install --no-install-recommends mongodb-clients
-
-# Clean up
-RUN apt-get clean -y && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL https://pgp.mongodb.com/server-7.0.asc | gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor \
+    && echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] http://repo.mongodb.org/apt/debian bookworm/mongodb-org/7.0 main" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list \
+    && apt-get update \
+    && apt-get install -y mongodb-org-tools mongodb-mongosh \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*

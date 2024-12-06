@@ -30,7 +30,7 @@ import PrivateRoute from './components/PrivateRoute';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#FF4B2B',
+      main: '#02A4D3',
     },
     secondary: {
       main: '#2B2D42',

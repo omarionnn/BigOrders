@@ -14,7 +14,13 @@ const orderItemSchema = new mongoose.Schema({
     required: true,
     default: 1
   },
-  notes: String
+  notes: String,
+  subtotal: {
+    type: Number,
+    default: function() {
+      return Number(this.price) * Number(this.quantity);
+    }
+  }
 });
 
 const participantSchema = new mongoose.Schema({
@@ -28,7 +34,11 @@ const participantSchema = new mongoose.Schema({
     enum: ['creator', 'participant'],
     default: 'participant'
   },
-  items: [orderItemSchema]
+  items: [orderItemSchema],
+  total: {
+    type: Number,
+    default: 0
+  }
 });
 
 const orderSchema = new mongoose.Schema({
@@ -41,7 +51,7 @@ const orderSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  user: {
+  creator: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -51,24 +61,21 @@ const orderSchema = new mongoose.Schema({
     ref: 'Restaurant',
     required: true
   },
-  items: [orderItemSchema],
-  participants: [participantSchema],
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'],
-    default: 'pending'
+    enum: ['open', 'active', 'completed', 'cancelled'],
+    default: 'open'
   },
-  deliveryAddress: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String
-  },
-  totalAmount: {
+  participants: [participantSchema],
+  total: {
     type: Number,
     default: 0
   },
   createdAt: {
+    type: Date,
+    default: Date.now
+  },
+  updatedAt: {
     type: Date,
     default: Date.now
   }
@@ -76,15 +83,29 @@ const orderSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Calculate total amount before saving
+// Virtual for getting all users in the order
+orderSchema.virtual('users').get(function() {
+  return [this.creator, ...this.participants.map(p => p.user)];
+});
+
+// Pre-save middleware to calculate totals
 orderSchema.pre('save', function(next) {
-  const mainOrderTotal = this.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const participantTotal = this.participants.reduce((sum, participant) => {
-    return sum + participant.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0);
-  }, 0);
+  // Calculate subtotals for each item
+  this.participants.forEach(participant => {
+    participant.items.forEach(item => {
+      item.subtotal = Number(item.price) * Number(item.quantity);
+    });
+    
+    // Calculate participant total
+    participant.total = participant.items.reduce((sum, item) => sum + item.subtotal, 0);
+  });
   
-  this.totalAmount = mainOrderTotal + participantTotal;
+  // Calculate order total
+  this.total = this.participants.reduce((sum, participant) => sum + participant.total, 0);
+  
   next();
 });
 
-module.exports = mongoose.model('Order', orderSchema);
+const Order = mongoose.model('Order', orderSchema);
+
+module.exports = Order;

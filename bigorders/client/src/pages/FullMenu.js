@@ -32,11 +32,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import { useOrder } from '../context/OrderContext';
 import { useCart } from '../context/CartContext';
+import api from '../config/axios';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
+import { TestLogger, validateMenuItem } from '../utils/testHelper';
 
 const FullMenu = () => {
   const { user } = useAuth();
@@ -57,14 +59,40 @@ const FullMenu = () => {
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
-    if (selectedRestaurant?.menu) {
-      // Ensure each menu item has a dietaryInfo array
-      const processedMenu = selectedRestaurant.menu.map(item => ({
-        ...item,
-        dietaryInfo: Array.isArray(item.dietaryInfo) ? item.dietaryInfo : []
-      }));
-      setMenuItems(processedMenu);
-      setFilteredItems(processedMenu);
+    const loadMenuItems = async () => {
+      try {
+        TestLogger.startTest('1.1', 'Menu Item Display');
+        TestLogger.logStep('Loading menu items', selectedRestaurant?._id);
+        
+        const response = await api.get(`/api/restaurants/${selectedRestaurant._id}/menu`);
+        TestLogger.logStep('Raw menu items', response.data);
+        
+        // Ensure prices are numbers and all required fields are present
+        const processedItems = response.data.map(item => {
+          const isValid = validateMenuItem(item);
+          if (!isValid) {
+            TestLogger.logError('Invalid menu item', item);
+            return null;
+          }
+          return {
+            ...item,
+            price: Number(item.price),
+            name: item.name.trim()
+          };
+        }).filter(item => item !== null);
+        
+        TestLogger.logStep('Processed menu items', processedItems);
+        setMenuItems(processedItems);
+        setFilteredItems(processedItems);
+        
+        TestLogger.endTest('1.1');
+      } catch (error) {
+        TestLogger.logError(error, 'Loading menu items');
+      }
+    };
+
+    if (selectedRestaurant?._id) {
+      loadMenuItems();
     }
   }, [selectedRestaurant]);
 
@@ -118,6 +146,17 @@ const FullMenu = () => {
   }, [menuItems, searchQuery, sortBy, filterCategory, priceRange, dietaryFilter]);
 
   const handleAddToCart = () => {
+    console.log('Adding item to cart:', {
+      selectedItem,
+      quantity,
+      specialInstructions,
+      itemDetails: {
+        name: selectedItem.name,
+        price: selectedItem.price,
+        priceType: typeof selectedItem.price
+      }
+    });
+
     addToCart(selectedItem, quantity, specialInstructions);
     setSelectedItem(null);
     setQuantity(1);

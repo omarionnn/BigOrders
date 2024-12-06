@@ -28,7 +28,7 @@ const Landing = () => {
     {
       icon: <GroupIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,
       title: 'Group Ordering Made Easy',
-      description: 'Create or join group orders with a simple 4-digit pin system',
+      description: 'Create or join group orders with a simple 6-digit PIN system',
     },
     {
       icon: <LocalOfferIcon sx={{ fontSize: 40, color: theme.palette.primary.main }} />,

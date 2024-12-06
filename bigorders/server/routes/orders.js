@@ -4,10 +4,11 @@ const { protect } = require('../middleware/auth');
 const {
   createOrder,
   joinOrder,
+  getOrderById,
   getMyOrders,
-  updateOrderItems,
-  closeOrder,
-  generateReceipt
+  generateReceipt,
+  addOrderItems,
+  updateOrderItems
 } = require('../controllers/orderController');
 
 // Create new order
@@ -16,16 +17,19 @@ router.post('/', protect, createOrder);
 // Join existing order
 router.post('/join', protect, joinOrder);
 
-// Get user's orders
-router.get('/myorders', protect, getMyOrders);
+// Get all orders for current user
+router.get('/user/myorders', protect, getMyOrders);
 
-// Update order items
+// Add items to order
+router.post('/:orderId/items', protect, addOrderItems);
+
+// Update items in order
 router.put('/:orderId/items', protect, updateOrderItems);
 
-// Close order
-router.put('/:orderId/close', protect, closeOrder);
+// Get specific order
+router.get('/:orderId', protect, getOrderById);
 
-// Generate receipt
+// Get receipt for specific order
 router.get('/:orderId/receipt', protect, generateReceipt);
 
 module.exports = router;

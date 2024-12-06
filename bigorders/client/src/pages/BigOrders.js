@@ -53,7 +53,7 @@ const BigOrders = () => {
     const fetchRestaurants = async () => {
       try {
         console.log('Fetching restaurants...');
-        const response = await api.get('/restaurants');
+        const response = await api.get('/api/restaurants');
         console.log('Restaurant API response:', response);
         
         if (response.data && Array.isArray(response.data)) {
@@ -120,7 +120,10 @@ const BigOrders = () => {
         name: orderName.trim()
       });
 
-      const result = await createOrder(selectedRestaurant, orderName.trim());
+      const result = await createOrder({
+        restaurantId: selectedRestaurant,
+        name: orderName.trim()
+      });
       console.log('%c4. Create Order Result:', 'color: blue', result);
 
       if (result.success) {
@@ -146,28 +149,42 @@ const BigOrders = () => {
   };
 
   const handleJoinOrder = async () => {
-    if (!pin) {
-      setError('Please enter a PIN');
-      return;
-    }
-
     try {
+      console.log('=== JOIN ORDER DEBUG ===');
+      console.log('1. Starting join order process');
+      console.log('2. PIN:', pin);
+      console.log('3. Auth state:', {
+        isAuthenticated: !!user,
+        user: user
+      });
+
       const result = await joinOrder(pin.trim());
+      
+      console.log('4. Join order result:', result);
+
       if (result.success) {
-        setError(null);
-        navigate('/recommended');
+        console.log('5. Successfully joined order:', result.order);
+        setShowSuccess(true);
+        setTimeout(() => {
+          navigate('/recommended');
+        }, 5000);
       } else {
-        setError(result.error || 'Failed to join order');
+        console.error('5. Failed to join order:', result.error);
+        setError(result.error);
       }
     } catch (err) {
-      console.error('Error joining order:', err);
-      setError('Failed to join order. Please try again.');
+      console.error('Error in handleJoinOrder:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      setError(err.message || 'Failed to join order');
     }
   };
 
   const handlePinChange = (e) => {
-    // Only allow numbers and limit to 4 digits
-    const value = e.target.value.replace(/[^\d]/g, '').slice(0, 4);
+    // Only allow numbers and limit to 6 digits
+    const value = e.target.value.replace(/[^\d]/g, '').slice(0, 6);
     setPin(value);
   };
 
@@ -386,17 +403,19 @@ const BigOrders = () => {
                 <>
                   <TextField
                     fullWidth
-                    label="Enter 4-digit PIN"
+                    label="Enter 6-digit PIN"
                     value={pin}
                     onChange={handlePinChange}
                     sx={{ mb: 3 }}
+                    inputProps={{ maxLength: 6 }}
+                    helperText="Enter the 6-digit PIN shared with you"
                   />
                   <Button
                     fullWidth
                     variant="contained"
                     size="large"
                     onClick={handleJoinOrder}
-                    disabled={loading || pin.length !== 4}
+                    disabled={loading || pin.length !== 6}
                   >
                     {loading ? <CircularProgress size={24} /> : 'Join Order'}
                   </Button>

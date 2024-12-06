@@ -8,15 +8,24 @@ services:
     volumes:
       - ../..:/workspaces:cached
     command: sleep infinity
-    network_mode: service:db
+    networks:
+      - bigorders-network
     environment:
       - MONGODB_URI=mongodb://db:27017/bigorders
 
   db:
     image: mongo:latest
     restart: unless-stopped
+    networks:
+      - bigorders-network
     volumes:
       - mongodb-data:/data/db
+    ports:
+      - "27017:27017"
+
+networks:
+  bigorders-network:
+    driver: bridge
 
 volumes:
   mongodb-data:
