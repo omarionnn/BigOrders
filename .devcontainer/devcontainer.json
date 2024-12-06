@@ -1,0 +1,27 @@
+{
+  "name": "BigOrders Development",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+  "forwardPorts": [3003, 5001, 27017],
+  "postCreateCommand": "cd bigorders/server && npm install && cd ../client && npm install",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "mongodb.mongodb-vscode"
+      ]
+    }
+  },
+  "remoteUser": "node",
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash"
+  }
+}
